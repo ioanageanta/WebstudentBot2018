@@ -8,4 +8,8 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
+
+    <style name="Reddish" parent="Theme.AppCompat">
+        <item name="android:background">#80DB1F1F</item>
+    </style>
 </resources>
