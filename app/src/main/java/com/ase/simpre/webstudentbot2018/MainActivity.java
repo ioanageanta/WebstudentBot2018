@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -76,6 +77,10 @@ public class MainActivity extends AppCompatActivity {
                             alertDialog.show();
                         } else {
                             //todo save in DB
+                            Utils utils = new Utils();
+                            utils.saveUser(new User(email, androidId));
+                            dialog.dismiss();
+                            Log.d("DB: ", utils.getUser("1").toString());
                         }
                     }
                 });

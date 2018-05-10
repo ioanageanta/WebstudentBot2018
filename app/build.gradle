@@ -53,6 +53,10 @@ dependencies {
     compile 'ai.api:libai:1.4.8'
     compile 'com.google.code.gson:gson:2.3.1'
     compile 'commons-io:commons-io:2.4'
+    compile 'com.fasterxml.jackson.core:jackson-core:2.5.3'
+    compile 'com.fasterxml.jackson.core:jackson-annotations:2.5.3'
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.5.3'
+    compile 'com.squareup.okhttp3:okhttp:3.10.0'
     testCompile 'junit:junit:4.12'
 }
 
