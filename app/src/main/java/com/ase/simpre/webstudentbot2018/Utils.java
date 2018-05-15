@@ -40,7 +40,7 @@ public class Utils {
 
     public String saveUser(User user) {
         try {
-            Response response = run("http://192.168.100.2:8082/save", objectMapper.writeValueAsString(user));
+            Response response = run("https://webstudentbot2018.herokuapp.com/save", objectMapper.writeValueAsString(user));
             if(response.isSuccessful()) {
                 return "OK";
             }
@@ -52,7 +52,7 @@ public class Utils {
 
     public User getUser(String id) {
         try {
-            Response response = run("http://192.168.100.2:8082/getUser/" + id);
+            Response response = run("https://webstudentbot2018.herokuapp.com/getUser/" + id);
             return objectMapper.readValue(response.body().byteStream(), User.class);
         } catch (IOException e) {
             e.printStackTrace();
@@ -62,7 +62,7 @@ public class Utils {
 
     public List<User> getUsers() {
         try {
-            Response response = run("http://192.168.100.2:8082/getUsers");
+            Response response = run("https://webstudentbot2018.herokuapp.com/getUsers");
             List<User> users = objectMapper.readValue(response.body().byteStream(), objectMapper.getTypeFactory().constructCollectionType(List.class, User.class));
             return users;
         } catch (IOException e) {

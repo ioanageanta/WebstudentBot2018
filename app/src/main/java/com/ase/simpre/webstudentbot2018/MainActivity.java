@@ -39,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
         enterButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                //todo authorize user
                 Intent intent = new Intent(MainActivity.this, ChatActivity.class);
                 startActivity(intent);
             }
@@ -80,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
                             Utils utils = new Utils();
                             utils.saveUser(new User(email, androidId));
                             dialog.dismiss();
-                            Log.d("DB: ", utils.getUser("1").toString());
+                            Log.d("DB: ", utils.getUser("2").toString());
                         }
                     }
                 });
