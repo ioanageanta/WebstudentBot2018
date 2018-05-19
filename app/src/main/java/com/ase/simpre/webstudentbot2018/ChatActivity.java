@@ -2,17 +2,20 @@ package com.ase.simpre.webstudentbot2018;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.provider.Settings;
+import android.speech.RecognizerIntent;
+import android.speech.tts.TextToSpeech;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -21,10 +24,14 @@ import android.view.animation.AnimationUtils;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+
+import java.util.ArrayList;
+import java.util.Locale;
 
 import ai.api.AIDataService;
 import ai.api.AIListener;
@@ -42,6 +49,8 @@ public class ChatActivity extends AppCompatActivity implements AIListener {
     DatabaseReference ref;
     FirebaseRecyclerAdapter<ChatMessage, chat_rec> adapter;
     Boolean flagFab = true;
+    TextToSpeech t1;
+    private final int REQ_CODE_SPEECH_INPUT = 100;
 
 
     private AIService aiService;
@@ -60,7 +69,29 @@ public class ChatActivity extends AppCompatActivity implements AIListener {
 
         recyclerView = findViewById(R.id.recyclerView);
         editText = findViewById(R.id.editText);
+
+        t1 = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                if (status != TextToSpeech.ERROR) {
+                    int result = t1.setLanguage(Locale.getDefault());
+                    if (result == TextToSpeech.LANG_MISSING_DATA
+                            || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                        Toast.makeText(getApplicationContext(), "This language is not supported", Toast.LENGTH_SHORT).show();
+                    }
+                }
+                Log.e("INIT", String.valueOf(status));
+            }
+        });
+
         addBtn = findViewById(R.id.addBtn);
+        addBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //todo start voice conv
+                askSpeechInput();
+            }
+        });
 
         recyclerView.setHasFixedSize(true);
         final LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
@@ -200,6 +231,50 @@ public class ChatActivity extends AppCompatActivity implements AIListener {
 
     }
 
+    public void onPause() {
+        if (t1 != null) {
+            t1.stop();
+            t1.shutdown();
+        }
+        super.onPause();
+    }
+
+    private void askSpeechInput() {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ro-RO");
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
+                "Hi speak something");
+        try {
+            startActivityForResult(intent, REQ_CODE_SPEECH_INPUT);
+        } catch (Exception exception) {
+            Log.e("SPEECH EXCEPTION", exception.getMessage());
+        }
+    }
+
+    // Receiving speech input
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        switch (requestCode) {
+            case REQ_CODE_SPEECH_INPUT: {
+                if (resultCode == RESULT_OK && null != data) {
+
+                    ArrayList<String> result = data
+                            .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+
+                    Log.i("VOICE RESULT", result.get(0));
+                }
+                break;
+            }
+
+        }
+    }
+
     public void ImageViewAnimatedChange(Context c, final ImageView v, final Bitmap new_image) {
         final Animation anim_out = AnimationUtils.loadAnimation(c, R.anim.zoom_out);
         final Animation anim_in = AnimationUtils.loadAnimation(c, R.anim.zoom_in);
@@ -247,6 +322,10 @@ public class ChatActivity extends AppCompatActivity implements AIListener {
 
         String reply = result.getFulfillment().getSpeech();
         ChatMessage chatMessage = new ChatMessage(reply, "bot");
+        String toSpeak = reply;
+        Toast.makeText(getApplicationContext(), toSpeak, Toast.LENGTH_SHORT).show();
+        //todo not working?!?!?!?!?!?!
+        t1.speak(toSpeak, TextToSpeech.QUEUE_FLUSH, null);
         ref.child("chat").push().setValue(chatMessage);
 
 

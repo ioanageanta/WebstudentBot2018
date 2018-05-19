@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import okhttp3.MediaType;
@@ -14,7 +13,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class Utils {
-    OkHttpClient client = new OkHttpClient();
+    OkHttpClient client = new OkHttpClient().newBuilder().followRedirects(true).followSslRedirects(true).build();
     ObjectMapper objectMapper = new ObjectMapper();
     public static final MediaType JSON
             = MediaType.parse("application/json; charset=utf-8");
@@ -38,10 +37,22 @@ public class Utils {
         return response;
     }
 
+    public boolean canBeRegistered(String androidId) {
+        try {
+            Response response = run("http://webstudentbot2018.herokuapp.com/getDevice/" + androidId);
+            if(response.body().string()=="false") {
+                return true;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public String saveUser(User user) {
         try {
-            Response response = run("https://webstudentbot2018.herokuapp.com/save", objectMapper.writeValueAsString(user));
-            if(response.isSuccessful()) {
+            Response response = run("http://webstudentbot2018.herokuapp.com/save", objectMapper.writeValueAsString(user));
+            if (response.isSuccessful()) {
                 return "OK";
             }
         } catch (IOException e) {
@@ -53,6 +64,17 @@ public class Utils {
     public User getUser(String id) {
         try {
             Response response = run("https://webstudentbot2018.herokuapp.com/getUser/" + id);
+            return objectMapper.readValue(response.body().byteStream(), User.class);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public User authorize(String deviceId) {
+        try {
+            Response response = run("https://webstudentbot2018.herokuapp.com/authorize/" + deviceId);
+
             return objectMapper.readValue(response.body().byteStream(), User.class);
         } catch (IOException e) {
             e.printStackTrace();
