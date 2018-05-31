@@ -17,6 +17,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.google.firebase.iid.FirebaseInstanceId;
+
 public class MainActivity extends AppCompatActivity implements AsyncResponse {
 
     private Button enterButton;
@@ -30,20 +32,16 @@ public class MainActivity extends AppCompatActivity implements AsyncResponse {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-//        requestWindowFeature(Window.FEATURE_NO_TITLE);
-//        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-//                WindowManager.LayoutParams.FLAG_FULLSCREEN);
           getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE
-                  // Set the content to appear under the system bars so that the
-                  // content doesn't resize when the system bars hide and show.
                   | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                   | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                   | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                  // Hide the nav bar and status bar
                   | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                   | View.SYSTEM_UI_FLAG_FULLSCREEN);
 
         setContentView(R.layout.activity_main);
+        MyFirebaseInstanceIDService myFirebaseInstanceIDService = new MyFirebaseInstanceIDService();
+        Log.e("TOKEN MAIN", FirebaseInstanceId.getInstance().getToken());
         this.getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.barColor)));
 
         androidId = Settings.Secure.getString(getContentResolver(),
@@ -74,12 +72,7 @@ public class MainActivity extends AppCompatActivity implements AsyncResponse {
                     AlertDialog alertDialog = alertDialogBuilder.create();
                     alertDialog.show();
                 } else {
-//                    Intent intent = new Intent(MainActivity.this, ChatActivity.class);
-//
-//                    Log.e("USER USER", user.getEmail());
-//                    bundle.putSerializable("loggedUser", user);
-//                    intent.putExtras(bundle);
-//                    startActivity(intent);
+
                 }
             }
         });
