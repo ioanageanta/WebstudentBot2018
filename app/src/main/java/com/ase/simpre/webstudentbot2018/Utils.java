@@ -1,5 +1,7 @@
 package com.ase.simpre.webstudentbot2018;
 
+import android.util.Log;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
@@ -92,5 +94,21 @@ public class Utils {
         }
 
         return new ArrayList<>();
+    }
+
+    public int getGrade(String email, String subject) {
+        try {
+            Response response = run("https://mockplatform.herokuapp.com/getGrade/" + email +"/" + subject);
+            if(response.isSuccessful() && response.body().contentLength() <= 2) {
+                int grade = Integer.valueOf(response.body().string());
+                Log.e("RESPONSE:::", String.valueOf(grade));
+                return grade;
+            } else {
+                return 0;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return 0;
     }
 }

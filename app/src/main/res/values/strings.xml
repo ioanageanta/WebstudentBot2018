@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">WebstudentBot</string>
+    <string name="app_name">Webstudent Chatbot</string>
     <string name="title_activity_login">Sign in</string>
 
     <string name="action_enter">Say hi</string>

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -9,7 +10,8 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    android:background="#80F22424"
+    android:background="#FFF"
+    android:alpha="0.7"
     tools:context=".MainActivity">
 
     <!-- Login progress -->
@@ -23,37 +25,37 @@
             android:id="@+id/email_login_form"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="100px"
             android:orientation="vertical">
 
             <Button
                 android:id="@+id/enter_button"
-                style="?android:textAppearanceSmall"
+
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="100dp"
-                android:background="#80DB1F1F"
-                android:text="@string/action_enter"
-                android:textColor="#80FFFFFF"
-                android:textStyle="bold" />
+                android:background="#80091360"
+                android:textColor="#fff"
+                android:text="@string/action_enter" />
 
             <Button
                 android:id="@+id/register_button"
-                style="?android:textAppearanceSmall"
+
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:background="#80DB1F1F"
-                android:text="@string/action_register"
-                android:textColor="#80FFFFFF"
-                android:textStyle="bold" />
+                android:background="#80091360"
+                android:textColor="#fff"
+                android:text="@string/action_register" />
 
             <TextView
                 android:id="@+id/textView"
-                android:layout_marginTop="16dp"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="75dp"
+                android:layout_marginTop="16dp"
                 android:text="If you already registered, you can discuss with the virtual assistant. If not, register your student e-mail address first."
-                android:textColor="#FFFFFF" />
+                android:textColor="#80091360"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
 
 
         </LinearLayout>
@@ -61,6 +63,11 @@
 
     </ScrollView>
 
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:srcCompat="@drawable/logo" />
 
 
     <!--<ProgressBar-->

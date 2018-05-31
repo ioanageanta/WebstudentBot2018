@@ -4,6 +4,8 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.drawable.ColorDrawable;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
@@ -15,44 +17,51 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements AsyncResponse {
 
     private Button enterButton;
     private Button registerButton;
     private String androidId;
     private Utils utils;
     private String email;
-    private User user;
+    public  User user;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+//        requestWindowFeature(Window.FEATURE_NO_TITLE);
+//        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+//                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+          getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE
+                  // Set the content to appear under the system bars so that the
+                  // content doesn't resize when the system bars hide and show.
+                  | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                  | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                  | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                  // Hide the nav bar and status bar
+                  | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                  | View.SYSTEM_UI_FLAG_FULLSCREEN);
 
         setContentView(R.layout.activity_main);
+        this.getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.barColor)));
 
         androidId = Settings.Secure.getString(getContentResolver(),
                 Settings.Secure.ANDROID_ID);
         utils = new Utils();
+        final AuthorizeThread authorizeThread = new AuthorizeThread();
+        authorizeThread.delegate = this;
         enterButton = findViewById(R.id.enter_button);
         registerButton = findViewById(R.id.register_button);
 
         enterButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //todo check why alert appears?!?!?!?!
-                Thread authorizeThread = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        user = utils.authorize(androidId);
-                    }
-                });
-                authorizeThread.start();
 
-                if (user == null && !authorizeThread.isAlive()) {
+                authorizeThread.execute(androidId);
+
+
+                if (user == null && authorizeThread.getStatus().equals(AsyncTask.Status.FINISHED)) {
                     final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MainActivity.this);
                     alertDialogBuilder.setMessage("You are not registered on this device");
                     alertDialogBuilder.setPositiveButton("OK",
@@ -65,8 +74,12 @@ public class MainActivity extends AppCompatActivity {
                     AlertDialog alertDialog = alertDialogBuilder.create();
                     alertDialog.show();
                 } else {
-                    Intent intent = new Intent(MainActivity.this, ChatActivity.class);
-                    startActivity(intent);
+//                    Intent intent = new Intent(MainActivity.this, ChatActivity.class);
+//
+//                    Log.e("USER USER", user.getEmail());
+//                    bundle.putSerializable("loggedUser", user);
+//                    intent.putExtras(bundle);
+//                    startActivity(intent);
                 }
             }
         });
@@ -74,6 +87,7 @@ public class MainActivity extends AppCompatActivity {
         registerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
                 final Dialog dialog = new Dialog(MainActivity.this);
 
                 dialog.setContentView(R.layout.custom_dialog);
@@ -156,5 +170,15 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+    }
+
+    @Override
+    public void processFinish(User output) {
+        user = output;
+        Log.e("USEEEEEEEEEEEEER", user.getEmail());
+        Intent intent = new Intent(MainActivity.this, ChatActivity.class);
+
+        intent.putExtra("loggedUser", user);
+        startActivity(intent);
     }
 }

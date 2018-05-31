@@ -1,13 +1,17 @@
 package com.ase.simpre.webstudentbot2018;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class User {
+public class User implements Parcelable{
     @JsonProperty("id")
     private String id;
     @JsonProperty("email")
@@ -60,5 +64,37 @@ public class User {
 
     public void setDeviceList(List<Device> deviceList) {
         this.deviceList = deviceList;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    // write your object's data to the passed-in Parcel
+    @Override
+    public void writeToParcel(Parcel out, int flags) {
+        out.writeString(id);
+        out.writeString(email);
+        out.writeList(deviceList);
+    }
+
+    // this is used to regenerate your object. All Parcelables must have a CREATOR that implements these two methods
+    public static final Parcelable.Creator<User> CREATOR = new Parcelable.Creator<User>() {
+        public User createFromParcel(Parcel in) {
+            return new User(in);
+        }
+
+        public User[] newArray(int size) {
+            return new User[size];
+        }
+    };
+
+    // example constructor that takes a Parcel and gives you an object populated with it's values
+    private User(Parcel in) {
+        id = in.readString();
+        email = in.readString();
+        deviceList = new ArrayList<>();
+        in.readList(deviceList, Device.class.getClassLoader());
     }
 }

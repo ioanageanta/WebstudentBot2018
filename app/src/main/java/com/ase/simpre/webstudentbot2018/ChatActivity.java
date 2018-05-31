@@ -1,10 +1,12 @@
 package com.ase.simpre.webstudentbot2018;
 
 import android.Manifest;
+import android.app.ActionBar;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.ColorDrawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
@@ -50,8 +52,10 @@ public class ChatActivity extends AppCompatActivity implements AIListener {
     FirebaseRecyclerAdapter<ChatMessage, chat_rec> adapter;
     Boolean flagFab = true;
     TextToSpeech t1;
+    Utils utils;
     private final int REQ_CODE_SPEECH_INPUT = 100;
-
+    private int grade;
+    private User loggedUser;
 
     private AIService aiService;
 
@@ -59,17 +63,33 @@ public class ChatActivity extends AppCompatActivity implements AIListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+//        requestWindowFeature(Window.FEATURE_NO_TITLE);
+//        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+//                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+//        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE
+//                // Set the content to appear under the system bars so that the
+//                // content doesn't resize when the system bars hide and show.
+//                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+//                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+//                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+//                // Hide the nav bar and status bar
+//                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+//                | View.SYSTEM_UI_FLAG_FULLSCREEN);
+
+        //ActionBar bar = getActionBar();
+        //bar.setBackgroundDrawable(new ColorDrawable(0x80091360));
+
+        this.getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.barColor)));
 
         setContentView(R.layout.activity_chat);
 
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 1);
-
+        Intent intent = this.getIntent();
+        loggedUser = intent.getParcelableExtra("loggedUser");
+        Log.e("USER DEVICES: ", loggedUser.getDeviceList().toString());
         recyclerView = findViewById(R.id.recyclerView);
         editText = findViewById(R.id.editText);
-
+        utils = new Utils();
         t1 = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
             @Override
             public void onInit(int status) {
@@ -131,6 +151,23 @@ public class ChatActivity extends AppCompatActivity implements AIListener {
                             final AIRequest request = aiRequests[0];
                             try {
                                 final AIResponse response = aiDataService.request(aiRequest);
+                                String reply = response.getResult().getFulfillment().getSpeech();
+                                Log.d("SEE RESP", reply);
+                                if(reply.contains("grade you got on")) {
+                                    String[] words = reply.split("\\s+");
+                                    for (int i = 0; i < words.length; i++) {
+                                        words[i] = words[i].replaceAll("[^\\w]", "");
+                                    }
+                                    String subject = "";
+                                    for(int j = 10; j < words.length; j++) {
+                                        subject = subject.concat(words[j]);
+                                        subject = subject.concat(" ");
+                                    }
+                                    subject = subject.trim();
+                                    Log.e("SUBJECT: ", subject);
+                                    Log.e("SUBJECT LENGTH: ", String.valueOf(subject.length()));
+                                    grade = utils.getGrade(loggedUser.getEmail(), subject);
+                                }
                                 return response;
                             } catch (AIServiceException e) {
                             }
@@ -146,8 +183,44 @@ public class ChatActivity extends AppCompatActivity implements AIListener {
                                 ChatMessage chatMessage = new ChatMessage(reply, "bot");
                                 ref.child("chat").push().setValue(chatMessage);
                             }
+
+
                         }
                     }.execute(aiRequest);
+
+                    new AsyncTask<AIRequest, Void, String>() {
+
+                        @Override
+                        protected String doInBackground(AIRequest... aiRequests) {
+                            //final AIRequest request = aiRequests[0];
+                            try {
+                                //final AIResponse response = aiDataService.request(aiRequest);
+                                final AIResponse response = aiDataService.request(aiRequest);
+                                String reply = response.getResult().getFulfillment().getSpeech();
+                                Log.d("SEE RESP", reply);
+                                if(reply.contains("grade you got on")) {
+
+                                    String gradeString = String.valueOf(grade);
+                                    Log.d("SEE RESP", gradeString);
+                                    return grade!=0 ? gradeString : "You don't have a grade for this subject yet.";
+                                }
+                            } catch (Exception e) {
+                            }
+                            return null;
+                        }
+
+                        @Override
+                        protected void onPostExecute(String response) {
+                            if (response != null) {
+
+                                //Result result = response.getResult();
+                                //String reply = result.getFulfillment().getSpeech();
+                                ChatMessage chatMessage = new ChatMessage(response, "bot");
+                                ref.child("chat").push().setValue(chatMessage);
+                            }
+                        }
+                    }.execute(aiRequest);
+
                 } else {
                     aiService.startListening();
                 }
@@ -321,9 +394,11 @@ public class ChatActivity extends AppCompatActivity implements AIListener {
 
 
         String reply = result.getFulfillment().getSpeech();
+
         ChatMessage chatMessage = new ChatMessage(reply, "bot");
         String toSpeak = reply;
         Toast.makeText(getApplicationContext(), toSpeak, Toast.LENGTH_SHORT).show();
+
         //todo not working?!?!?!?!?!?!
         t1.speak(toSpeak, TextToSpeech.QUEUE_FLUSH, null);
         ref.child("chat").push().setValue(chatMessage);

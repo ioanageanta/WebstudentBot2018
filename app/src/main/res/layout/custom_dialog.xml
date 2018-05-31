@@ -13,7 +13,7 @@
         android:layout_marginRight="25dp"
         android:layout_marginLeft="25dp"
         android:elegantTextHeight="true"
-        android:backgroundTint="#80F22424"
+        android:backgroundTint="#80091360"
         android:hint="Your e-mail"
         android:inputType="textEmailAddress">
 
@@ -35,7 +35,7 @@
             android:layout_weight="1"
             android:background="#FFFFFF"
             android:text="Save"
-            android:textColor="#80F22424"
+            android:textColor="#80091360"
             android:textStyle="bold" />
 
         <Button
@@ -46,7 +46,7 @@
             android:layout_weight="1"
             android:background="#FFFFFF"
             android:text="Cancel"
-            android:textColor="#80F22424"
+            android:textColor="#80091360"
             android:textStyle="bold" />
 
     </LinearLayout>
