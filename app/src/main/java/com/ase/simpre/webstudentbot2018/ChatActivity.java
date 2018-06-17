@@ -1,12 +1,13 @@
 package com.ase.simpre.webstudentbot2018;
 
 import android.Manifest;
-import android.app.ActionBar;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
@@ -19,19 +20,12 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
-
-//import com.firebase.ui.database.FirebaseRecyclerAdapter;
-//import com.google.firebase.database.DatabaseReference;
-//import com.google.firebase.database.FirebaseDatabase;
-
 
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.google.firebase.database.DatabaseReference;
@@ -61,28 +55,13 @@ public class ChatActivity extends AppCompatActivity implements AIListener {
     private final int REQ_CODE_SPEECH_INPUT = 100;
     private int grade;
     private User loggedUser;
-
+    private boolean isSpeechActive = false;
+    String speakGrade="";
     private AIService aiService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-//        requestWindowFeature(Window.FEATURE_NO_TITLE);
-//        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-//                WindowManager.LayoutParams.FLAG_FULLSCREEN);
-//        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE
-//                // Set the content to appear under the system bars so that the
-//                // content doesn't resize when the system bars hide and show.
-//                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-//                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-//                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-//                // Hide the nav bar and status bar
-//                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-//                | View.SYSTEM_UI_FLAG_FULLSCREEN);
-
-        //ActionBar bar = getActionBar();
-        //bar.setBackgroundDrawable(new ColorDrawable(0x80091360));
 
         this.getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.barColor)));
 
@@ -95,25 +74,12 @@ public class ChatActivity extends AppCompatActivity implements AIListener {
         recyclerView = findViewById(R.id.recyclerView);
         editText = findViewById(R.id.editText);
         utils = new Utils();
-        t1 = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
-            @Override
-            public void onInit(int status) {
-                if (status != TextToSpeech.ERROR) {
-                    int result = t1.setLanguage(Locale.getDefault());
-                    if (result == TextToSpeech.LANG_MISSING_DATA
-                            || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                        Toast.makeText(getApplicationContext(), "This language is not supported", Toast.LENGTH_SHORT).show();
-                    }
-                }
-                Log.e("INIT", String.valueOf(status));
-            }
-        });
+
 
         addBtn = findViewById(R.id.addBtn);
         addBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //todo start voice conv
                 askSpeechInput();
             }
         });
@@ -142,94 +108,147 @@ public class ChatActivity extends AppCompatActivity implements AIListener {
             public void onClick(View view) {
 
                 String message = editText.getText().toString().trim();
-
-                if (!message.equals("")) {
-
-                    ChatMessage chatMessage = new ChatMessage(message, "user");
-                    ref.child("chat").push().setValue(chatMessage);
-
-                    aiRequest.setQuery(message);
-                    new AsyncTask<AIRequest, Void, AIResponse>() {
-
-                        @Override
-                        protected AIResponse doInBackground(AIRequest... aiRequests) {
-                            final AIRequest request = aiRequests[0];
-                            try {
-                                final AIResponse response = aiDataService.request(aiRequest);
-                                String reply = response.getResult().getFulfillment().getSpeech();
-                                Log.d("SEE RESP", reply);
-                                if(reply.contains("grade you got on")) {
-                                    String[] words = reply.split("\\s+");
-                                    for (int i = 0; i < words.length; i++) {
-                                        words[i] = words[i].replaceAll("[^\\w]", "");
-                                    }
-                                    String subject = "";
-                                    for(int j = 10; j < words.length; j++) {
-                                        subject = subject.concat(words[j]);
-                                        subject = subject.concat(" ");
-                                    }
-                                    subject = subject.trim();
-                                    Log.e("SUBJECT: ", subject);
-                                    Log.e("SUBJECT LENGTH: ", String.valueOf(subject.length()));
-                                    grade = utils.getGrade(loggedUser.getEmail(), subject);
-                                }
-                                return response;
-                            } catch (AIServiceException e) {
-                            }
-                            return null;
-                        }
-
-                        @Override
-                        protected void onPostExecute(AIResponse response) {
-                            if (response != null) {
-
-                                Result result = response.getResult();
-                                String reply = result.getFulfillment().getSpeech();
-                                ChatMessage chatMessage = new ChatMessage(reply, "bot");
-                                ref.child("chat").push().setValue(chatMessage);
-                            }
-
-
-                        }
-                    }.execute(aiRequest);
-
-                    new AsyncTask<AIRequest, Void, String>() {
-
-                        @Override
-                        protected String doInBackground(AIRequest... aiRequests) {
-                            //final AIRequest request = aiRequests[0];
-                            try {
-                                //final AIResponse response = aiDataService.request(aiRequest);
-                                final AIResponse response = aiDataService.request(aiRequest);
-                                String reply = response.getResult().getFulfillment().getSpeech();
-                                Log.d("SEE RESP", reply);
-                                if(reply.contains("grade you got on")) {
-
-                                    String gradeString = String.valueOf(grade);
-                                    Log.d("SEE RESP", gradeString);
-                                    return grade!=0 ? gradeString : "You don't have a grade for this subject yet.";
-                                }
-                            } catch (Exception e) {
-                            }
-                            return null;
-                        }
-
-                        @Override
-                        protected void onPostExecute(String response) {
-                            if (response != null) {
-
-                                //Result result = response.getResult();
-                                //String reply = result.getFulfillment().getSpeech();
-                                ChatMessage chatMessage = new ChatMessage(response, "bot");
-                                ref.child("chat").push().setValue(chatMessage);
-                            }
-                        }
-                    }.execute(aiRequest);
-
+                if (message.toLowerCase().contains("call secretariat") || message.toLowerCase().contains("call administrative office") || message.toLowerCase().contains("apel secretariat")) {
+                    Intent intent = new Intent(Intent.ACTION_CALL);
+                    Log.d("IN CALL", message);
+                    intent.setData(Uri.parse("tel:" + "0752100836"));
+                    if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
+                        // TODO: Consider calling
+                        //    ActivityCompat#requestPermissions
+                        // here to request the missing permissions, and then overriding
+                        //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                        //                                          int[] grantResults)
+                        // to handle the case where the user grants the permission. See the documentation
+                        // for ActivityCompat#requestPermissions for more details.
+                        return;
+                    }
+                    getApplicationContext().startActivity(intent);
                 } else {
-                    aiService.startListening();
-                }
+                    if (!message.equals("")) {
 
+                        ChatMessage chatMessage = new ChatMessage(message, "user");
+                        ref.child("chat").push().setValue(chatMessage);
+
+                        aiRequest.setQuery(message);
+                        new AsyncTask<AIRequest, Void, AIResponse>() {
+
+                            @Override
+                            protected AIResponse doInBackground(AIRequest... aiRequests) {
+                                final AIRequest request = aiRequests[0];
+                                try {
+                                    final AIResponse response = aiDataService.request(aiRequest);
+                                    String reply = response.getResult().getFulfillment().getSpeech();
+                                    Log.d("SEE RESP", reply);
+                                    if (reply.contains("grade you got on")) {
+                                        String[] words = reply.split("\\s+");
+                                        for (int i = 0; i < words.length; i++) {
+                                            words[i] = words[i].replaceAll("[^\\w]", "");
+                                        }
+                                        String subject = "";
+                                        for (int j = 10; j < words.length; j++) {
+                                            subject = subject.concat(words[j]);
+                                            subject = subject.concat(" ");
+                                        }
+                                        subject = subject.trim();
+                                        Log.e("SUBJECT: ", subject);
+                                        Log.e("SUBJECT LENGTH: ", String.valueOf(subject.length()));
+                                        grade = utils.getGrade(loggedUser.getEmail(), subject);
+                                    }
+                                    return response;
+                                } catch (AIServiceException e) {
+                                }
+                                return null;
+                            }
+
+                            @Override
+                            protected void onPostExecute(AIResponse response) {
+                                if (response != null) {
+
+                                    Result result = response.getResult();
+                                    final String reply = result.getFulfillment().getSpeech();
+                                    ChatMessage chatMessage = new ChatMessage(reply, "bot");
+
+                                    if(isSpeechActive) {
+                                        t1 = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+                                            @Override
+                                            public void onInit(int status) {
+                                                if (status != TextToSpeech.ERROR) {
+                                                    int result = t1.setLanguage(Locale.ENGLISH);
+                                                    if (result == TextToSpeech.LANG_MISSING_DATA
+                                                            || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                                                        Toast.makeText(getApplicationContext(), "This language is not supported", Toast.LENGTH_SHORT).show();
+                                                    } else {
+                                                        t1.speak(reply, TextToSpeech.QUEUE_FLUSH, null);
+                                                        isSpeechActive = false;
+                                                    }
+                                                }
+                                                Log.e("INIT", String.valueOf(status));
+                                            }
+                                        });
+                                    }
+                                    ref.child("chat").push().setValue(chatMessage);
+                                }
+
+
+                            }
+                        }.execute(aiRequest);
+
+                        new AsyncTask<AIRequest, Void, String>() {
+
+                            @Override
+                            protected String doInBackground(AIRequest... aiRequests) {
+                                //final AIRequest request = aiRequests[0];
+                                try {
+                                    //final AIResponse response = aiDataService.request(aiRequest);
+                                    final AIResponse response = aiDataService.request(aiRequest);
+                                    String reply = response.getResult().getFulfillment().getSpeech();
+                                    Log.d("SEE RESP", reply);
+                                    if (reply.contains("grade you got on")) {
+
+                                        String gradeString = String.valueOf(grade);
+                                        Log.d("SEE RESP", gradeString);
+                                        return !gradeString.equalsIgnoreCase("0") ? gradeString : "You don't have a grade for this subject yet.";
+                                    }
+                                } catch (Exception e) {
+                                }
+                                return null;
+                            }
+
+                            @Override
+                            protected void onPostExecute(final String response) {
+                                if (response != null) {
+
+                                    //Result result = response.getResult();
+                                    //String reply = result.getFulfillment().getSpeech();
+                                    ChatMessage chatMessage = new ChatMessage(response, "bot");
+
+                                    if(isSpeechActive) {
+                                        t1 = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+                                            @Override
+                                            public void onInit(int status) {
+                                                if (status != TextToSpeech.ERROR) {
+                                                    int result = t1.setLanguage(Locale.ENGLISH);
+                                                    if (result == TextToSpeech.LANG_MISSING_DATA
+                                                            || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                                                        Toast.makeText(getApplicationContext(), "This language is not supported", Toast.LENGTH_SHORT).show();
+                                                    } else {
+                                                        t1.speak(response, TextToSpeech.QUEUE_FLUSH, null);
+                                                        isSpeechActive = false;
+                                                    }
+                                                }
+                                                Log.e("INIT", String.valueOf(status));
+                                            }
+                                        });
+                                    }
+                                    ref.child("chat").push().setValue(chatMessage);
+                                }
+                            }
+                        }.execute(aiRequest);
+
+                    } else {
+                        aiService.startListening();
+                    }
+                }
                 editText.setText("");
 
             }
@@ -318,6 +337,7 @@ public class ChatActivity extends AppCompatActivity implements AIListener {
     }
 
     private void askSpeechInput() {
+        isSpeechActive = true;
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                 RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
@@ -398,17 +418,62 @@ public class ChatActivity extends AppCompatActivity implements AIListener {
         ref.child("chat").push().setValue(chatMessage0);
 
 
-        String reply = result.getFulfillment().getSpeech();
+        final String reply = result.getFulfillment().getSpeech();
+
+        if (reply.contains("grade you got on")) {
+            new AsyncTask<Void, Void, Void>() {
+                @Override
+                protected Void doInBackground(Void... voids) {
+
+                    String[] words = reply.split("\\s+");
+                    for (int i = 0; i < words.length; i++) {
+                        words[i] = words[i].replaceAll("[^\\w]", "");
+                    }
+                    String subject = "";
+                    for (int j = 10; j < words.length; j++) {
+                        subject = subject.concat(words[j]);
+                        subject = subject.concat(" ");
+                    }
+                    subject = subject.trim();
+                    Log.e("SUBJECT: ", subject);
+                    Log.e("SUBJECT LENGTH: ", String.valueOf(subject.length()));
+                    grade = utils.getGrade(loggedUser.getEmail(), subject);
+
+                    if (grade == 0) {
+                        speakGrade = "You don't have a grade for this subject yet.";
+                    } else {
+                        speakGrade = String.valueOf(grade);
+                    }
+                    return null;
+                }
+            }.execute();
+
+        }
 
         ChatMessage chatMessage = new ChatMessage(reply, "bot");
-        String toSpeak = reply;
-        Toast.makeText(getApplicationContext(), toSpeak, Toast.LENGTH_SHORT).show();
-
-        //todo not working?!?!?!?!?!?!
-        t1.speak(toSpeak, TextToSpeech.QUEUE_FLUSH, null);
+        final String toSpeak = reply;
+        t1 = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                if (status != TextToSpeech.ERROR) {
+                    int result = t1.setLanguage(Locale.ENGLISH);
+                    if (result == TextToSpeech.LANG_MISSING_DATA
+                            || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                        Toast.makeText(getApplicationContext(), "This language is not supported", Toast.LENGTH_SHORT).show();
+                    } else {
+                        if(!speakGrade.isEmpty()) {
+                            t1.speak("You got a " + speakGrade, TextToSpeech.QUEUE_FLUSH, null);
+                            isSpeechActive = false;
+                        } else {
+                            t1.speak(toSpeak, TextToSpeech.QUEUE_FLUSH, null);
+                            isSpeechActive = false;
+                        }
+                    }
+                }
+                Log.e("INIT", String.valueOf(status));
+            }
+        });
         ref.child("chat").push().setValue(chatMessage);
-
-
     }
 
     @Override

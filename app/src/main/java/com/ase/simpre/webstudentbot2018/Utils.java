@@ -106,7 +106,7 @@ public class Utils {
             } else {
                 return 0;
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return 0;
